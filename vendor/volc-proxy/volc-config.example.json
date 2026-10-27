@@ -1,13 +1,13 @@
 {
-  "appid": "替换为火山引擎AppID",
-  "token": "替换为火山引擎访问令牌",
-  "cluster": "volcano_tts",
+  "mode": "v3",
+  "apiKey": "替换为火山引擎X-Api-Key",
+  "model": "seed-audio-1.0",
   "port": 8787,
-  "endpoint": "https://openspeech.bytedance.com/api/v1/tts",
-  "defaultVoice": "BV001_streaming",
-  "voices": {
-    "00000000000000000000000000000001": "BV001_streaming",
-    "00000000000000000000000000000002": "BV002_streaming",
-    "00000000000000000000000000000003": "zh_female_wanqudashu_moon_bigtts"
+  "endpoint": "https://openspeech.bytedance.com/api/v3/tts/create",
+  "defaultVoicePrompt": "一个年轻女性的声音，说话自然、温柔、清晰。",
+  "voicePrompt": {
+    "00000000000000000000000000000001": "一个年轻女性的声音，说话自然、温柔、清晰。",
+    "00000000000000000000000000000002": "一个年轻男性的声音，语气平和、沉稳。",
+    "00000000000000000000000000000003": "一个可爱萝莉风格的女声，活泼俏皮。"
   }
 }
