@@ -1,0 +1,44 @@
+{
+  "name": "dsh-wechat-voice",
+  "version": "0.1.0",
+  "description": "DeepSeek Harness 语音插件：用自然在线语音（Edge，百度兜底）或离线 SAPI 合成微信语音条，60 秒切段、按聊天授权、hook 能力探测与降级。",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "cordis.patch.yml",
+    "index.js",
+    "lib/",
+    "voices/",
+    "scripts/",
+    "SKILL.md"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "keywords": [
+    "dsh-plugin",
+    "wechatagent",
+    "wechat",
+    "voice",
+    "tts",
+    "deepseek-harness"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "preview": "node scripts/preview.mjs"
+  },
+  "dependencies": {
+    "mpg123-decoder": "^1.0.3",
+    "ws": "^8.22.0"
+  }
+}

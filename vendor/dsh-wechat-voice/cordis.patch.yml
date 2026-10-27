@@ -1,0 +1,9 @@
+# dsh-wechat-voice bundle patch: host 端语音工具。
+# 手动挂载（本机开发用）：
+#   在 profile 的 cordis.yml 增加
+#     - id: dsh-wechat-voice
+#       name: dsh-wechat-voice
+#   然后重启 DSH。
+- insert:
+    - id: dsh-wechat-voice
+      name: dsh-wechat-voice

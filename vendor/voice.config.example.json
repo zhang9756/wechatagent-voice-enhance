@@ -1,0 +1,17 @@
+{
+  "engine": "fish",
+  "voice": "",
+  "rate": 0,
+  "volume": 100,
+  "maxVoices": 2,
+  "maxChars": 500,
+  "maxVoiceMs": 55000,
+  "fallback": "stage",
+  "fishApiKey": "替换为你的FishAudio_API_Key",
+  "fishApiKeyEnv": "FISH_AUDIO_API_KEY",
+  "fishEndpoint": "",
+  "fishProxy": "",
+  "fishModel": "s2.1-pro-free",
+  "fishLatency": "normal",
+  "fishFallback": true
+}

@@ -1,0 +1,14 @@
+﻿{
+    "integration":  "WeChatAgent-1",
+    "exceptionDiagnostics":  "seh-cpp-stage-v1",
+    "mutexCompatibility":  "legacy-runtime-constructor-v1",
+    "upstream":  "https://github.com/aixed/WeChat-Hook",
+    "targetVersion":  "4.1.10.27",
+    "moduleWaitTimeoutMs":  0,
+    "nativeFiles":  "appmsg-6-factory-v1",
+    "commit":  "e905d07ade50d2c6472e4eb3bd4f3fe19cf662c6",
+    "sha256":  "d6c2c45f410e73feb20897ef7b676b51377f82485e5d917d26c452a31f165242",
+    "moduleWaitWarningMs":  30000,
+    "initialization":  "deferred-module-v3",
+    "logWriter":  "win32-srw-v1"
+}

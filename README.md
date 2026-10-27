@@ -8,6 +8,10 @@
 
 页面严格沿用 WeChatAgent 官方控制台的卡片、表单、表格样式，升级后一键重打补丁即可恢复。
 
+> ⭐ **v2.0 起为「完整安装包」**：已内置语音发送的全部后端组件——
+> `dsh-wechat-voice` 插件、`silk_encoder.exe`、支持 `SendVoiceMsg` 的语音版 `version.dll`，
+> 以及 Fish Audio 配置模板。运行 `setup.ps1` 即可全自动安装，无需手动准备组件。
+
 ---
 
 ## ✨ 功能一览
@@ -37,6 +41,12 @@ wechatagent-voice-enhance/
 │   ├── index.html            # 补丁后控制台页面（含导航）
 │   ├── layout-model.mjs      # 补丁后路由表
 │   └── *.original            # 官方 0.4.1 原版，供核对
+├── vendor/                    # 语音后端组件（v2.0 完整包）
+│   ├── dsh-wechat-voice/      # 语音合成/发送插件（MIT）
+│   ├── silk/silk_encoder.exe  # SILK 编码器
+│   ├── hook/version.dll       # 语音版 hook（支持 SendVoiceMsg）
+│   ├── hook/build.json        # hook 清单（sha256）
+│   └── voice.config.example.json  # Fish Audio 配置模板
 ├── scripts/
 │   ├── setup.ps1              # 一键安装（检测工作区→打补丁）
 │   ├── apply-voice-patch.ps1 # 一键打补丁（校验→备份→覆盖）
@@ -52,13 +62,16 @@ wechatagent-voice-enhance/
 ### 环境要求
 
 - Windows 10/11
-- 已安装 WeChatAgent 0.4.1（含控制台与微信 hook）
-- 已部署支持语音的 hook `version.dll`（`nativeVoiceSend: true`）
-- 已配置 Fish Audio API Key（`state/voice/config.json`）
+- 已安装 **WeChatAgent 0.4.1**（含控制台与匹配微信客户端 4.1.10.27）—— 本包补丁基于 0.4.1，0.4.0 需先升级
+- 微信客户端未在运行（安装脚本会在部署 hook 组件时检查）
+- 一个 **Fish Audio API Key**（`state/voice/config.json`，注册 fish.audio 后免费获取）
+
+> 安装脚本会自动部署全部语音后端组件（dsh-wechat-voice 插件、SILK 编码器、语音版 hook DLL），
+> 不需要你手动准备。v2.0 完整包无需再单独下载语音组件。
 
 ### 步骤
 
-#### 方式一：一键安装（推荐）
+#### 方式一：一键完整安装（推荐）
 
 1. 克隆或下载本项目，解压到任意目录。
 2. 以 PowerShell 运行一键安装脚本：
@@ -68,7 +81,9 @@ pwsh -File scripts\setup.ps1 -Workspace <你的工作区目录>
 ```
 
 > 不带 `-Workspace` 时脚本会自动检测常见路径；找不到再手动指定。
-> 脚本会自动：检测工作区 → 备份原文件 → 部署语音页面补丁 → 重打社区桥接插件补丁。
+> 脚本会自动：检测工作区并校验 0.4.1 → 部署语音后端（插件/SILK/hook DLL/配置模板）
+> → 备份原文件 → 打控制台补丁 → 重打社区桥接插件补丁。
+> 安装完成后按脚本提示：填 Fish Audio API Key → 重开微信 → 重启 DSH。
 
 #### 方式二：手动打补丁
 
