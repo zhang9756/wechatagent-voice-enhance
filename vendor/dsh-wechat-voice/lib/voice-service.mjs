@@ -148,7 +148,7 @@ export function createVoiceService({ root = defaultRoot(), settings = {}, cordis
    * back to SAPI: the configured SAPI fallback name would look like a request.
    */
   async function resolveVoice(requested, engine = options.engine, base = options) {
-    const mode = ['auto', 'edge', 'baidu', 'sapi', 'fish'].includes(String(engine)) ? String(engine) : base.engine;
+    const mode = ['auto', 'edge', 'baidu', 'sapi', 'fish', 'volc'].includes(String(engine)) ? String(engine) : base.engine;
     const raw = String(requested ?? '').trim();
     // `晓伊` is what the owner types; Edge only understands `zh-CN-XiaoyiNeural`.
     const wanted = raw ? (resolveEdgeVoice(raw) || raw) : '';
@@ -159,6 +159,11 @@ export function createVoiceService({ root = defaultRoot(), settings = {}, cordis
     const sapiPick = async preferred => pickVoice(preferred).catch(error => ({
       name: '', fellBack: false, note: error?.code ?? 'TTS_ENGINE_UNAVAILABLE',
     }));
+    if (mode === 'volc') {
+      // 火山引擎：voice 直接作为火山模型/声音 ID 透传（不要求 32 位 hex）。
+      const voice = wanted || String(base.voice ?? '').trim();
+      return { name: voice, engine: 'volc', sapiVoice: base.voice, fellBack: false, note: '' };
+    }
     if (mode === 'fish') {
       const voice = fishVoice || (isFishVoice(base.voice) ? base.voice : FISH_VOICE);
       return {
@@ -276,7 +281,7 @@ export function createVoiceService({ root = defaultRoot(), settings = {}, cordis
       ok: true,
       tts: {
         engine: options.engine,
-        engines: ['auto', 'edge', 'baidu', 'sapi', 'fish'],
+        engines: ['auto', 'edge', 'baidu', 'sapi', 'fish', 'volc'],
         edgeVoice: options.edgeVoice,
         edgeVoiceLabel: edgeVoiceLabel(options.edgeVoice),
         baiduVoice: BAIDU_VOICE,
@@ -392,7 +397,7 @@ export function createVoiceService({ root = defaultRoot(), settings = {}, cordis
     }
     if (engine !== undefined && engine !== null) {
       const mode = String(engine);
-      if (!['auto', 'edge', 'baidu', 'sapi', 'fish'].includes(mode)) {
+      if (!['auto', 'edge', 'baidu', 'sapi', 'fish', 'volc'].includes(mode)) {
         throw coded('TTS_ARGUMENTS_INVALID', { detail: `engine=${mode}` });
       }
       patch.engine = mode;
@@ -567,7 +572,7 @@ export function createVoiceService({ root = defaultRoot(), settings = {}, cordis
     // here is exactly what the next message will sound like.
     const chat = sessionId ? chatForSession(root, sessionId) : null;
     const base = chat ? settingsFor(chat.key) : refreshGlobal();
-    const mode = ['auto', 'edge', 'baidu', 'sapi', 'fish'].includes(String(engine)) ? String(engine) : base.engine;
+    const mode = ['auto', 'edge', 'baidu', 'sapi', 'fish', 'volc'].includes(String(engine)) ? String(engine) : base.engine;
     const picked = await resolveVoice(voice, mode, base);
     const voiceName = picked.name;
     const { clean, items } = await synthesizeChunks({

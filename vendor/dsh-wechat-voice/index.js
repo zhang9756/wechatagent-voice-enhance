@@ -79,7 +79,7 @@ export function apply(ctx, config = {}) {
         properties: {
           text: { type: 'string', description: '要朗读的正文（最多 1200 字），用当前人格的语气，不要带括号动作或表情符号占位' },
           voice: { type: 'string', description: '可选。临时音色（不保存）：中文名如 晓伊 / 晓北 / 晓双，或 Edge 完整名 zh-CN-XiaoyiNeural，或 Fish 的 reference_id（32 位十六进制）；引擎为 baidu 时忽略。长期更换请用 wechat_voice_set' },
-          engine: { type: 'string', enum: ['auto', 'edge', 'baidu', 'sapi', 'fish'], description: '可选。auto=Edge→百度→SAPI 自动兜底（默认）；edge=只用 Edge；baidu=只用百度在线女声；sapi=只用本机 SAPI（完全离线）；fish=Fish Audio 在线合成（要配 API key，情绪和克隆更强，支持 [laughing] 这类标签）' },
+          engine: { type: 'string', enum: ['auto', 'edge', 'baidu', 'sapi', 'fish', 'volc'], description: '可选。auto=Edge→百度→SAPI 自动兜底（默认）；edge=只用 Edge；baidu=只用百度在线女声；sapi=只用本机 SAPI（完全离线）；fish=Fish Audio 在线合成（要配 API key，情绪和克隆更强，支持 [laughing] 这类标签）' },
           rate: { type: 'integer', description: '可选。语速，-10 到 10，负慢正快，默认 0' },
           volume: { type: 'integer', description: '可选。音量，0 到 100，默认 100' },
           maxVoices: { type: 'integer', description: '可选。最多切几条语音，1 到 3，默认 2' },
@@ -102,7 +102,7 @@ export function apply(ctx, config = {}) {
         properties: {
           text: { type: 'string', description: '要试听的内容（最多 1200 字）' },
           voice: { type: 'string', description: '可选。Edge 音色（zh-CN-XiaoxiaoNeural / zh-CN-XiaoyiNeural 等）、本机 SAPI 名，或 Fish 的 reference_id' },
-          engine: { type: 'string', enum: ['auto', 'edge', 'baidu', 'sapi', 'fish'], description: '可选。auto（默认，Edge→百度→SAPI）/ edge / baidu / sapi / fish（Fish Audio）' },
+          engine: { type: 'string', enum: ['auto', 'edge', 'baidu', 'sapi', 'fish', 'volc'], description: '可选。auto（默认，Edge→百度→SAPI）/ edge / baidu / sapi / fish（Fish Audio）' },
           rate: { type: 'integer', description: '可选。语速，-10 到 10' },
           volume: { type: 'integer', description: '可选。音量，0 到 100' },
         },
@@ -132,7 +132,7 @@ export function apply(ctx, config = {}) {
         type: 'object',
         properties: {
           voice: { type: 'string', description: '要用的音色：中文短名（晓伊/晓北/晓双/云希…）、Edge 完整名 zh-CN-XiaoyiNeural、本机 SAPI 名，或 Fish Audio reference_id（32 位，会自动切到 fish 引擎）；传 "" 清掉本聊天的音色回到全局默认' },
-          engine: { type: 'string', enum: ['auto', 'edge', 'baidu', 'sapi', 'fish'], description: '可选。auto=Edge→百度→SAPI（推荐）；edge=只用在线神经网络音色；sapi=只用本机离线音色；fish=改用 Fish Audio 在线合成（需 API key）' },
+          engine: { type: 'string', enum: ['auto', 'edge', 'baidu', 'sapi', 'fish', 'volc'], description: '可选。auto=Edge→百度→SAPI（推荐）；edge=只用在线神经网络音色；sapi=只用本机离线音色；fish=改用 Fish Audio 在线合成（需 API key）' },
           rate: { type: 'integer', description: '可选。语速，-10 到 10，负慢正快' },
           volume: { type: 'integer', description: '可选。音量，0 到 100' },
           scope: { type: 'string', enum: ['chat', 'global'], description: '可选。chat=只改当前聊天（默认）；global=改全局默认音色' },

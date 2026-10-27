@@ -66,7 +66,7 @@ function resolveVoice(referenceId) {
   return defaultVoicePrompt;
 }
 
-async function synthesizeVolc({ text, voicePromptText, encoding = 'mp3', speed = 1.0 }) {
+async function synthesizeVolc({ text, voicePromptText, encoding = 'mp3', speed = 1.0, referenceId = '' }) {
   if (mode === 'v2') {
     const appid = String(config.appid ?? '').trim();
     const token = String(config.token ?? '').trim();
@@ -100,7 +100,9 @@ async function synthesizeVolc({ text, voicePromptText, encoding = 'mp3', speed =
 
   // v3 模式
   const apiKey = String(config.apiKey ?? '').trim();
-  const model = String(config.model ?? 'seed-audio-1.0').trim();
+  // 若 referenceId 是明确模型 ID（非 32 位 hex），用它覆盖配置的 model。
+  const raw = String(referenceId ?? '').trim();
+  const model = raw && !/^[0-9a-f]{32}$/i.test(raw) ? raw : String(config.model ?? 'seed-audio-1.0').trim();
   if (!apiKey) throw new Error('v3 模式需要 apiKey（X-Api-Key）');
   const prompt = voicePromptText ? voicePromptText + ' ' + text : text;
   const body = {
@@ -205,7 +207,7 @@ const server = http.createServer(async (req, res) => {
     const prompt = resolveVoice(referenceId);
     const encoding = format === 'wav' ? 'wav' : 'mp3';
     try {
-      const audio = await synthesizeVolc({ text, voicePromptText: prompt, encoding, speed });
+      const audio = await synthesizeVolc({ text, voicePromptText: prompt, encoding, speed, referenceId });
       res.writeHead(200, { 'Content-Type': encoding === 'wav' ? 'audio/wav' : 'audio/mpeg' });
       return res.end(audio);
     } catch (error) {

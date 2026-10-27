@@ -3,11 +3,17 @@
 // 让每个微信聊天都能单独指定 Fish Audio 音色，不必再去翻 JSON 或命令行。
 export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) {
   const FISH = /^[a-f0-9]{32}$/i;
+  // 火山引擎使用模型 ID（任意字符串），fish 才要求 32 位十六进制。
+  const isValidVoice = (voice, engine) => {
+    if (!voice) return true;
+    if (engine === 'volc') return true;
+    return FISH.test(voice);
+  };
   let data = null, sequence = 0, busy = '', logs = [];
   const CHAT_PREFIX = /^wechat:(private|group):([0-9]{1,20})$/;
   const chatKey = (kind, id) => `wechat:${kind === 'group' ? 'group' : 'private'}:${id}`;
   const chatLabel = key => state.names?.get(key) ?? (key.includes(':group:') ? '群聊 · ' : '好友 · ') + key.split(':').pop();
-  const engineLabel = value => ({fish:'Fish Audio',edge:'Edge 语音',baidu:'百度在线',sapi:'本机 SAPI'}[value] ?? value ?? '跟随默认');
+  const engineLabel = value => ({fish:'Fish Audio',volc:'火山引擎',edge:'Edge 语音',baidu:'百度在线',sapi:'本机 SAPI'}[value] ?? value ?? '跟随默认');
 
   function rows() {
     if (!data) return [];
@@ -30,7 +36,7 @@ export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) 
       <td><div class="name-cell"><span class="avatar">${esc(chatLabel(key).slice(0,1))}</span><div><strong>${esc(chatLabel(key))}</strong><small class="mono">${esc(key)}</small></div></div></td>
       <td><span class="status-tag ${isDefault ? '' : 'ok'}">${isDefault ? '跟随全局默认' : '本聊天专属'}</span></td>
       <td><input class="mono" data-voice-input="${esc(key)}" type="text" value="${esc(voice)}" maxlength="64" placeholder="${esc(data.defaults.voice || '留空则跟随默认音色')}" aria-label="${esc(chatLabel(key))} 的音色 ID"></td>
-      <td><select data-voice-engine="${esc(key)}" aria-label="${esc(chatLabel(key))} 的语音引擎">${['fish','edge','baidu','sapi'].map(name => `<option value="${name}" ${engine === name ? 'selected' : ''}>${engineLabel(name)}</option>`).join('')}</select></td>
+      <td><select data-voice-engine="${esc(key)}" aria-label="${esc(chatLabel(key))} 的语音引擎">${['fish','volc','edge','baidu','sapi'].map(name => `<option value="${name}" ${engine === name ? 'selected' : ''}>${engineLabel(name)}</option>`).join('')}</select></td>
       <td><span class="subtle" data-voice-effective="${esc(key)}">${esc(effective || '尚未设置')}</span></td>
       <td class="row-actions"><div class="button-row"><button class="button small" data-voice-preview="${esc(key)}">${icon('play')}试听</button><button class="button small danger" data-voice-reset="${esc(key)}" ${isDefault ? 'disabled' : ''}>恢复默认</button></div></td>
     </tr>`;
@@ -64,12 +70,12 @@ export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) 
         <div class="card-header"><div class="section-label"><span class="section-icon">${icon('send')}</span><div><h2>换音色</h2><p class="card-description">选一个聊天，填入音色 ID，点“应用”即可，下一条语音立刻用新音色。</p></div></div></div>
         <div class="form-grid">
           <div class="field"><label for="voice-quick-chat">目标聊天</label><select id="voice-quick-chat">${list.map(key => `<option value="${esc(key)}">${esc(chatLabel(key))}</option>`).join('')}</select><small>只列出已允许的好友和群聊。</small></div>
-          <div class="field"><label for="voice-quick-id">音色 ID</label><input id="voice-quick-id" class="mono" type="text" maxlength="64" placeholder="32 位十六进制音色 ID，例如 b9e0f881bec94846ac9df43e10488fe0"><small>填 Fish Audio 的引用 ID；留空表示这个聊天跟随全局默认。</small></div>
+          <div class="field"><label for="voice-quick-id">音色 ID</label><input id="voice-quick-id" class="mono" type="text" maxlength="64" placeholder="Fish 填 32 位音色 ID / 火山填模型 ID（如 BV001_streaming）"><small>填 Fish Audio 的引用 ID；留空表示这个聊天跟随全局默认。</small></div>
         </div>
         <div class="button-row space-top">
           <button class="button primary" data-voice-quick-apply>${icon('check')}应用</button>
           <button class="button" data-voice-quick-preview>${icon('play')}先试听</button>
-          <select id="voice-quick-engine" class="table-select">${['fish','edge','baidu','sapi'].map(name => `<option value="${name}" ${data.defaults.engine === name ? 'selected' : ''}>${engineLabel(name)}</option>`).join('')}</select>
+          <select id="voice-quick-engine" class="table-select">${['fish','volc','edge','baidu','sapi'].map(name => `<option value="${name}" ${data.defaults.engine === name ? 'selected' : ''}>${engineLabel(name)}</option>`).join('')}</select>
         </div>
       </section>
       <section class="card">
@@ -78,7 +84,7 @@ export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) 
         <div class="form-grid space-top">
           <div class="field"><label for="voice-send-chat">发送给</label><select id="voice-send-chat">${list.map(key => `<option value="${esc(key)}">${esc(chatLabel(key))}</option>`).join('')}</select><small>好友按数字 ID 发送，群聊自动带上 @chatroom。</small></div>
           <div class="field"><label for="voice-send-id">音色 ID</label><input id="voice-send-id" class="mono" type="text" maxlength="64" placeholder="留空 = 用这个聊天已保存的音色"><small>留空就用“按聊天设置”里保存的音色。</small></div>
-          <div class="field"><label for="voice-send-engine">引擎</label><select id="voice-send-engine">${['fish','edge','baidu','sapi'].map(name => `<option value="${name}" ${data.defaults.engine === name ? 'selected' : ''}>${engineLabel(name)}</option>`).join('')}</select><small>留空音色时以该聊天记录里的引擎为准。</small></div>
+          <div class="field"><label for="voice-send-engine">引擎</label><select id="voice-send-engine">${['fish','volc','edge','baidu','sapi'].map(name => `<option value="${name}" ${data.defaults.engine === name ? 'selected' : ''}>${engineLabel(name)}</option>`).join('')}</select><small>留空音色时以该聊天记录里的引擎为准。</small></div>
         </div>
         <div class="button-row space-top">
           <button class="button primary" data-voice-send>${icon('send')}合成并发送</button>
@@ -105,7 +111,7 @@ export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) 
         <div class="card-header"><div class="section-label"><span class="section-icon">${icon('info')}</span><div><h2>全局默认音色</h2><p class="card-description">没有单独设置的聊天都会用它。</p></div></div></div>
         <div class="form-grid">
           <div class="field"><label for="voice-default-id">默认音色 ID</label><input id="voice-default-id" class="mono" type="text" maxlength="64" value="${esc(data.defaults.voice || '')}" placeholder="32 位十六进制音色 ID"><small>修改后点“保存默认音色”，对所有未单独设置的聊天生效。</small></div>
-          <div class="field"><label for="voice-default-engine">引擎</label><select id="voice-default-engine">${['fish','edge','baidu','sapi'].map(name => `<option value="${name}" ${data.defaults.engine === name ? 'selected' : ''}>${engineLabel(name)}</option>`).join('')}</select><small>换音色前请确认引擎与音色 ID 类型一致。</small></div>
+          <div class="field"><label for="voice-default-engine">引擎</label><select id="voice-default-engine">${['fish','volc','edge','baidu','sapi'].map(name => `<option value="${name}" ${data.defaults.engine === name ? 'selected' : ''}>${engineLabel(name)}</option>`).join('')}</select><small>换音色前请确认引擎与音色 ID 类型一致。</small></div>
         </div>
         <div class="button-row space-top"><button class="button" data-voice-save-default>保存默认音色</button><button class="button" data-voice-refresh>${icon('refresh')}重新读取</button></div>
       </section>
@@ -165,7 +171,7 @@ export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) 
     const { key, text, voice, engine } = sendFields();
     const body = text.trim();
     if (!body) { toast('先写点要说的话'); return; }
-    if (voice && !FISH.test(voice)) { toast('音色 ID 应为 32 位十六进制字符'); return; }
+    if (voice && !isValidVoice(voice, engine)) { toast(engine === 'volc' ? '火山引擎音色/模型 ID 不能为空' : '音色 ID 应为 32 位十六进制字符'); return; }
     sendStatus('正在合成…');
     try {
       const result = await api('/api/voice/send', { key, text: body, voice, engine });
@@ -200,7 +206,7 @@ export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) 
     const engine = document.querySelector(`[data-voice-engine="${key}"]`);
     if (!input) return;
     const voice = input.value.trim();
-    if (voice && !FISH.test(voice)) { input.reportValidity?.(); toast('音色 ID 应为 32 位十六进制字符'); return; }
+    if (voice && !isValidVoice(voice, engine?.value ?? 'fish')) { input.reportValidity?.(); toast(engine?.value === 'volc' ? '火山引擎音色/模型 ID 不能为空' : '音色 ID 应为 32 位十六进制字符'); return; }
     busy = key; toast('正在保存…');
     try {
       data = await api('/api/voice/chat', { key, voice, engine: engine?.value ?? 'fish' });
@@ -213,7 +219,7 @@ export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) 
   async function saveDefault() {
     const voice = document.getElementById('voice-default-id')?.value.trim() ?? '';
     const engine = document.getElementById('voice-default-engine')?.value ?? 'fish';
-    if (voice && !FISH.test(voice)) { toast('音色 ID 应为 32 位十六进制字符'); return; }
+    if (voice && !isValidVoice(voice, engine)) { toast(engine === 'volc' ? '火山引擎音色/模型 ID 不能为空' : '音色 ID 应为 32 位十六进制字符'); return; }
     try {
       data = await api('/api/voice/default', { voice, engine });
       toast('默认音色已保存');
@@ -227,8 +233,9 @@ export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) 
 
   async function preview(key) {
     const input = document.querySelector(`[data-voice-input="${key}"]`);
+    const engine = document.querySelector(`[data-voice-engine="${key}"]`)?.value ?? 'fish';
     const voice = input?.value.trim() ?? '';
-    if (voice && !FISH.test(voice)) { toast('音色 ID 应为 32 位十六进制字符'); return; }
+    if (voice && !isValidVoice(voice, engine)) { toast(engine === 'volc' ? '火山引擎音色/模型 ID 不能为空' : '音色 ID 应为 32 位十六进制字符'); return; }
     toast('正在合成试听…');
     try {
       const result = await api('/api/voice/preview', { key, voice, engine: document.querySelector(`[data-voice-engine="${key}"]`)?.value ?? 'fish' });
@@ -246,7 +253,8 @@ export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) 
           const input = document.querySelector(`[data-voice-input="${key}"]`);
           if (!input) continue;
           const voice = input.value.trim();
-          if (voice && !FISH.test(voice)) { toast('有音色 ID 格式不正确，已停在那一行'); input.focus(); return; }
+          const engine = document.querySelector(`[data-voice-engine="${key}"]`)?.value ?? 'fish';
+          if (voice && !isValidVoice(voice, engine)) { toast(engine === 'volc' ? '火山引擎音色/模型 ID 不能为空' : '有音色 ID 格式不正确，已停在那一行'); input.focus(); return; }
         }
         for (const key of keys) {
           const input = document.querySelector(`[data-voice-input="${key}"]`);
@@ -264,7 +272,7 @@ export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) 
       const key = document.getElementById('voice-quick-chat')?.value ?? '';
       const voice = document.getElementById('voice-quick-id')?.value.trim() ?? '';
       const engine = document.getElementById('voice-quick-engine')?.value ?? 'fish';
-      if (voice && !FISH.test(voice)) { toast('音色 ID 应为 32 位十六进制字符'); return true; }
+      if (voice && !isValidVoice(voice, engine)) { toast(engine === 'volc' ? '火山引擎音色/模型 ID 不能为空' : '音色 ID 应为 32 位十六进制字符'); return true; }
       void (async () => {
         try {
           data = await api('/api/voice/chat', { key, voice, engine });
@@ -279,7 +287,7 @@ export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) 
       const voice = document.getElementById('voice-quick-id')?.value.trim() ?? '';
       const engine = document.getElementById('voice-quick-engine')?.value ?? 'fish';
       if (!voice) { toast('先填一个音色 ID 再试听'); return true; }
-      if (!FISH.test(voice)) { toast('音色 ID 应为 32 位十六进制字符'); return true; }
+      if (!isValidVoice(voice, engine)) { toast(engine === 'volc' ? '火山引擎音色/模型 ID 不能为空' : '音色 ID 应为 32 位十六进制字符'); return true; }
       void (async () => {
         toast('正在合成试听…');
         try {

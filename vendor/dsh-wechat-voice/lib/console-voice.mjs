@@ -97,7 +97,7 @@ export const voiceFiles = root => ({
 export function normalizeVoice(raw = {}) {
   const value = raw && typeof raw === 'object' ? raw : {};
   return {
-    engine: ['auto', 'edge', 'baidu', 'sapi'].includes(value.engine) ? value.engine : VOICE_DEFAULTS.engine,
+    engine: ['auto', 'edge', 'baidu', 'sapi', 'volc'].includes(value.engine) ? value.engine : VOICE_DEFAULTS.engine,
     edgeVoice: resolveVoiceName(value.edgeVoice) || VOICE_DEFAULTS.edgeVoice,
     voice: typeof value.voice === 'string' && value.voice.trim() ? value.voice.trim().slice(0, 64) : VOICE_DEFAULTS.voice,
     rate: clampInt(value.rate, -10, 10, VOICE_DEFAULTS.rate),
@@ -189,7 +189,7 @@ export function saveVoice(root, { key, scope = 'chat', engine, edgeVoice, rate, 
       }
     }
     if (engine !== undefined) {
-      if (!['auto', 'edge', 'baidu', 'sapi'].includes(engine)) fail('请选择有效的语音引擎。');
+      if (!['auto', 'edge', 'baidu', 'sapi', 'volc'].includes(engine)) fail('请选择有效的语音引擎。');
       patch.engine = engine;
     }
     if (rate !== undefined) {

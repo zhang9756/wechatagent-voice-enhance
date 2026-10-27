@@ -229,7 +229,7 @@ export async function synthesize({
   fishApiKey = '', fishApiKeyEnv = 'FISH_AUDIO_API_KEY', fishEndpoint = '', fishModel = FISH_DEFAULT_MODEL,
   fishLatency = 'normal', fishProxy = '', fallbackOnFishError = false,
 } = {}) {
-  const mode = ['auto', 'edge', 'baidu', 'sapi', 'fish'].includes(String(engine)) ? String(engine) : 'sapi';
+  const mode = ['auto', 'edge', 'baidu', 'sapi', 'fish', 'volc'].includes(String(engine)) ? String(engine) : 'sapi';
   if (mode === 'sapi') return synthesizeSapi({ text, outPath, voice, rate, volume, sampleRate, timeoutMs });
   if (mode === 'baidu') return synthesizeBaidu({ text, outPath, rate, volume, timeoutMs });
 
@@ -237,6 +237,13 @@ export async function synthesize({
     text, outPath, voice, model: fishModel, apiKey: fishApiKey, apiKeyEnv: fishApiKeyEnv,
     endpoint: fishEndpoint, rate, volume, latency: fishLatency, timeoutMs, proxy: fishProxy,
   };
+
+  // 火山引擎：走 fish 兼容的本地代理（fishEndpoint 指向 volc-proxy），
+  // voice 直接作为火山的模型/声音 ID 透传，不要求 32 位十六进制。
+  if (mode === 'volc') {
+    const made = await synthesizeFish(fishArgs);
+    return { ...made, engine: 'volc' };
+  }
 
   if (mode === 'fish') {
     try {

@@ -135,7 +135,7 @@ export function createConsole({ root = projectRoot, port = 3210, runner, readerS
   };
   const voiceEngine = value => {
     const name = String(value ?? '').trim() || 'fish';
-    if (!['fish', 'edge', 'baidu', 'sapi'].includes(name)) throw fault('请选择有效的语音引擎。');
+    if (!['fish', 'volc', 'edge', 'baidu', 'sapi'].includes(name)) throw fault('请选择有效的语音引擎。');
     return name;
   };
   const voiceChatKey = value => {
