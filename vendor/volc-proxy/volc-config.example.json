@@ -1,0 +1,13 @@
+{
+  "appid": "替换为火山引擎AppID",
+  "token": "替换为火山引擎访问令牌",
+  "cluster": "volcano_tts",
+  "port": 8787,
+  "endpoint": "https://openspeech.bytedance.com/api/v1/tts",
+  "defaultVoice": "BV001_streaming",
+  "voices": {
+    "00000000000000000000000000000001": "BV001_streaming",
+    "00000000000000000000000000000002": "BV002_streaming",
+    "00000000000000000000000000000003": "zh_female_wanqudashu_moon_bigtts"
+  }
+}

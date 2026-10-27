@@ -16,9 +16,10 @@
     6. 提示重开微信与重启 DSH
 
   用法：
-    pwsh -File setup.ps1                      # 自动检测工作区
+    pwsh -File setup.ps1                      # 自动检测工作区（Fish Audio 模式）
     pwsh -File setup.ps1 -Workspace D:\yu\workspace
-    pwsh -File setup.ps1 -Workspace D:\yu\workspace -SkipCommunityPatch
+    pwsh -File setup.ps1 -UseVolc            # 火山引擎模式（国内直连，无需梯子）
+    pwsh -File setup.ps1 -SkipCommunityPatch  # 跳过社区补丁
 
   前提：
     - 已安装 WeChatAgent 0.4.1（含控制台与匹配微信客户端 4.1.10.27）
@@ -28,7 +29,8 @@
 param(
   [string]$Workspace = '',
   [switch]$SkipCommunityPatch,
-  [switch]$SkipHookDeploy
+  [switch]$SkipHookDeploy,
+  [switch]$UseVolc
 )
 
 $ErrorActionPreference = 'Stop'
@@ -150,9 +152,29 @@ if (-not $SkipHookDeploy) {
   Write-Host "  [HOOK] 已跳过 hook 部署（-SkipHookDeploy）"
 }
 
-# 3.5 Fish Audio 配置
+# 3.5 语音引擎配置（Fish Audio 或火山引擎）
 $voiceCfg = Join-Path $ws 'state\voice\config.json'
-if (-not (Test-Path -LiteralPath $voiceCfg)) {
+if ($UseVolc) {
+  # 火山引擎模式：把 fishEndpoint 指向本地代理，fishApiKey 用占位
+  if (-not (Test-Path -LiteralPath $voiceCfg)) {
+    New-Item -ItemType Directory -Path (Split-Path $voiceCfg -Parent) -Force | Out-Null
+    Copy-Item (Join-Path $root 'vendor\voice.config.example.json') $voiceCfg -Force
+  }
+  $cfg = Get-Content $voiceCfg -Raw | ConvertFrom-Json
+  $cfg.fishEndpoint = 'http://127.0.0.1:8787/v1/tts'
+  $cfg.fishProxy = ''
+  $cfg.fishApiKey = 'volc-proxy'
+  $cfg | ConvertTo-Json -Depth 6 | Set-Content $voiceCfg -Encoding UTF8
+  # 复制火山代理配置模板（若不存在）
+  $volcDir = Join-Path $root 'vendor\volc-proxy'
+  $volcCfg = Join-Path $volcDir 'volc-config.json'
+  if (-not (Test-Path -LiteralPath $volcCfg)) {
+    Copy-Item (Join-Path $volcDir 'volc-config.example.json') $volcCfg -Force
+  }
+  Write-Host "  [语音] 已切换为火山引擎模式（fishEndpoint=$($cfg.fishEndpoint)）"
+  Write-Host "         请编辑 $volcCfg 填入 appid/token/音色映射，"
+  Write-Host "         然后运行 $root\start-volc-proxy.bat 启动代理。"
+} elseif (-not (Test-Path -LiteralPath $voiceCfg)) {
   New-Item -ItemType Directory -Path (Split-Path $voiceCfg -Parent) -Force | Out-Null
   Copy-Item (Join-Path $root 'vendor\voice.config.example.json') $voiceCfg -Force
   Write-Host "  [语音] 已生成 state\voice\config.json，请填入 Fish Audio API Key"
@@ -176,14 +198,27 @@ Write-Host '=================================================='
 Write-Host ' ✅ 完整安装已完成！'
 Write-Host ''
 Write-Host ' 接下来（按顺序）：'
-Write-Host '  1. 填写 Fish Audio API Key：'
-Write-Host "     编辑 $voiceCfg"
-Write-Host '     在 fish.audio 注册账号 -> 控制台 -> API Keys 获取。'
-Write-Host '  2. 重开微信（先完全退出再打开，或在控制台点「打开匹配微信」），'
+if ($UseVolc) {
+  Write-Host '  1. 配置火山引擎：'
+  Write-Host "     编辑 $root\vendor\volc-proxy\volc-config.json"
+  Write-Host '     填入火山引擎 AppID / 访问令牌（语音技术控制台获取），'
+  Write-Host '     并把常用音色填进 voices 映射表。'
+  Write-Host '  2. 启动本地代理：双击 start-volc-proxy.bat（保持运行）。'
+} else {
+  Write-Host '  1. 填写 Fish Audio API Key：'
+  Write-Host "     编辑 $voiceCfg"
+  Write-Host '     在 fish.audio 注册账号 -> 控制台 -> API Keys 获取。'
+}
+Write-Host "  $($UseVolc ? '3' : '2'). 重开微信（先完全退出再打开，或在控制台点「打开匹配微信」），"
 Write-Host '     让语音版 version.dll 生效（nativeVoiceSend: true）。'
-Write-Host '  3. 完整退出并重新打开 DSH（托盘退出）。'
-Write-Host '  4. 打开 WeChatAgent 控制台 -> 侧边栏「语音音色」：'
-Write-Host '     - 在「全局默认音色」填一个 Fish Audio 音色 ID'
-Write-Host '     - 在「合成语音并发送」输入文字选聊天，直接发语音条'
+Write-Host "  $($UseVolc ? '4' : '3'). 完整退出并重新打开 DSH（托盘退出）。"
+Write-Host "  $($UseVolc ? '5' : '4'). 打开 WeChatAgent 控制台 -> 侧边栏「语音音色」："
+if ($UseVolc) {
+  Write-Host '     - 「全局默认音色」填 volc-config.json voices 映射表里的 32 位 ID'
+  Write-Host '     - 「合成语音并发送」输入文字选聊天，直接发语音条'
+} else {
+  Write-Host '     - 在「全局默认音色」填一个 Fish Audio 音色 ID'
+  Write-Host '     - 在「合成语音并发送」输入文字选聊天，直接发语音条'
+}
 Write-Host '=================================================='
 Write-Host ''

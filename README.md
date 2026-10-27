@@ -48,6 +48,7 @@ wechatagent-voice-enhance/
 │   ├── silk/silk_encoder.exe  # SILK 编码器
 │   ├── hook/version.dll       # 语音版 hook（支持 SendVoiceMsg）
 │   ├── hook/build.json        # hook 清单（sha256）
+│   ├── volc-proxy/             # 火山引擎本地代理（国内直连，无需梯子）
 │   └── voice.config.example.json  # Fish Audio 配置模板
 ├── scripts/
 │   ├── setup.ps1              # 一键安装（检测工作区→打补丁）
@@ -66,7 +67,9 @@ wechatagent-voice-enhance/
 - Windows 10/11
 - 已安装 **WeChatAgent 0.4.1**（含控制台与匹配微信客户端 4.1.10.27）—— 本包补丁基于 0.4.1，0.4.0 需先升级
 - 微信客户端未在运行（安装脚本会在部署 hook 组件时检查）
-- 一个 **Fish Audio API Key**（`state/voice/config.json`，注册 fish.audio 后免费获取）
+- 语音引擎二选一：
+  - **Fish Audio**（默认，海外）：需要梯子 + Fish Audio API Key
+  - **火山引擎**（国内直连，无需梯子）：需要火山引擎 AppID/访问令牌（推荐给国内用户）
 
 > 安装脚本会自动部署全部语音后端组件（dsh-wechat-voice 插件、SILK 编码器、语音版 hook DLL），
 > 不需要你手动准备。v2.0 完整包无需再单独下载语音组件。
@@ -95,7 +98,26 @@ pwsh -File scripts\setup.ps1 -Workspace <你的工作区目录>
 > → 备份原文件 → 打控制台补丁 → 重打社区桥接插件补丁。
 > 安装完成后按脚本提示：填 Fish Audio API Key → 重开微信 → 重启 DSH。
 
-#### 方式二：手动打补丁
+#### 方式二：火山引擎模式（国内直连，无需梯子）
+
+不需要 fish.audio，用火山引擎语音技术（openspeech）作为合成后端。
+
+1. 到 [火山引擎控制台](https://console.volcengine.com/) 开通「语音技术 → 大模型语音合成 / 声音复刻」，获取 **AppID** 和**访问令牌**。
+2. 运行一键安装并启用火山模式：
+   ```powershell
+   pwsh -File scripts\setup.ps1 -UseVolc
+   ```
+3. 编辑 `vendor\volc-proxy\volc-config.json`：
+   - 填入 `appid` / `token`
+   - 在 `voices` 映射表里把「32 位音色 ID」映射到火山的 `voice_type`（如 `BV001_streaming`）
+   - `defaultVoice` 填一个默认音色
+4. 双击 **`start-volc-proxy.bat`** 启动本地代理（保持窗口运行）。
+5. 重开微信、重启 DSH 后，在控制台「语音音色」页面填映射表里的 32 位 ID 即可。
+
+> 原理：代理把 `dsh-wechat-voice` 的 fish.audio 格式请求转成火山 API，插件不用改任何代码。
+> 音色 ID 就是你在 `volc-config.json` 的 `voices` 里定义的 32 位 ID。
+
+#### 方式三：手动打补丁
 
 1. 克隆或下载本项目。
 2. 以 PowerShell 运行一键补丁：
