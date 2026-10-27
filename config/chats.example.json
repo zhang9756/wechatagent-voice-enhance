@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "updatedAt": "2026-10-27T00:00:00.000Z",
+  "chats": {
+    "wechat:private:1000000001": {
+      "engine": "fish",
+      "voice": "请替换为32位音色ID"
+    },
+    "wechat:private:1000000002": {
+      "engine": "fish",
+      "voice": "请替换为32位音色ID"
+    },
+    "wechat:group:2000000001": {
+      "engine": "fish",
+      "voice": "请替换为32位音色ID"
+    },
+    "wechat:group:2000000002": {
+      "engine": "fish",
+      "voice": "请替换为32位音色ID"
+    }
+  }
+}

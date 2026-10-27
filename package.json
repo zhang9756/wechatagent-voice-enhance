@@ -1,0 +1,16 @@
+{
+  "name": "wechatagent-voice-enhance",
+  "version": "1.0.0",
+  "description": "为 WeChatAgent 控制台新增「语音音色」图形页面：按聊天设置 Fish Audio 音色、输入文字合成并发送语音条。",
+  "author": "",
+  "license": "MIT",
+  "keywords": [
+    "wechat",
+    "wechatagent",
+    "voice",
+    "tts",
+    "fish-audio",
+    "语音"
+  ],
+  "private": false
+}

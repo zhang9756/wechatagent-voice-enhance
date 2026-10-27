@@ -1,0 +1,30 @@
+# 忽略敏感数据
+**/state/
+**/config/wechatagent.json
+**/config/distribution.json
+**/.wechatagent-data.json
+**/*.log
+**/*.silk
+**/*.wav
+
+# 备份与临时文件
+**/*.bak
+**/*.bak-*
+**/*.original.bak
+**/tmp_*
+*.tmp
+
+# Node
+node_modules/
+package-lock.json
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 本地构建产物
+**/x64/
+**/build-source/
+**/silk/bin/
