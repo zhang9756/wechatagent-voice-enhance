@@ -38,6 +38,7 @@ wechatagent-voice-enhance/
 │   ├── layout-model.mjs      # 补丁后路由表
 │   └── *.original            # 官方 0.4.1 原版，供核对
 ├── scripts/
+│   ├── setup.ps1              # 一键安装（检测工作区→打补丁）
 │   ├── apply-voice-patch.ps1 # 一键打补丁（校验→备份→覆盖）
 │   └── repatch-community.ps1 # 社区桥接插件补丁（web_search 重名 / 历史写入）
 ├── roles/
@@ -56,6 +57,20 @@ wechatagent-voice-enhance/
 - 已配置 Fish Audio API Key（`state/voice/config.json`）
 
 ### 步骤
+
+#### 方式一：一键安装（推荐）
+
+1. 克隆或下载本项目，解压到任意目录。
+2. 以 PowerShell 运行一键安装脚本：
+
+```powershell
+pwsh -File scripts\setup.ps1 -Workspace <你的工作区目录>
+```
+
+> 不带 `-Workspace` 时脚本会自动检测常见路径；找不到再手动指定。
+> 脚本会自动：检测工作区 → 备份原文件 → 部署语音页面补丁 → 重打社区桥接插件补丁。
+
+#### 方式二：手动打补丁
 
 1. 克隆或下载本项目。
 2. 以 PowerShell 运行一键补丁：
