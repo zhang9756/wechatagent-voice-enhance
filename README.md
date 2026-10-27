@@ -32,8 +32,10 @@
 wechatagent-voice-enhance/
 ├── README.md
 ├── LICENSE
+├── install.bat                 # 双击一键安装入口
 ├── docs/
-│   └── VOICE_PAGE.md          # 语音页面功能与接口说明
+│   ├── VOICE_PAGE.md          # 语音页面功能与接口说明
+│   └── 安装说明-给朋友.md       # 给朋友的完整安装指引
 ├── patch/                     # 补丁文件
 │   ├── voice-settings.js      # 新增语音页面前端模块（完整文件）
 │   ├── console.js            # 补丁后控制台主脚本
@@ -71,7 +73,15 @@ wechatagent-voice-enhance/
 
 ### 步骤
 
-#### 方式一：一键完整安装（推荐）
+#### 方式零：双击一键安装（最省事）
+
+解压后直接**双击根目录的 `install.bat`**，它会自动：
+- 检测并校验工作区（0.4.1）
+- 部署语音后端（插件 / SILK / 语音版 DLL / 配置模板）
+- 打控制台与社区补丁
+- 最后提示你填 API Key、重开微信、重启 DSH
+
+#### 方式一：命令行一键完整安装（推荐）
 
 1. 克隆或下载本项目，解压到任意目录。
 2. 以 PowerShell 运行一键安装脚本：
