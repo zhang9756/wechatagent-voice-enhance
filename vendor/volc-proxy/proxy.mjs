@@ -43,6 +43,21 @@ const endpoint = String(config.endpoint ?? '').trim() || (
 );
 const voicePrompt = config.voicePrompt ?? {};
 const defaultVoicePrompt = String(config.defaultVoicePrompt ?? '').trim();
+const models = config.models ?? {};
+
+function saveConfig(next) {
+  const merged = { ...config, ...next };
+  const temp = CONFIG_PATH + '.' + process.pid + '.tmp';
+  fs.writeFileSync(temp, JSON.stringify(merged, null, 2) + '\n', { mode: 0o600 });
+  fs.renameSync(temp, CONFIG_PATH);
+  Object.assign(config, merged);
+}
+
+function cors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
 
 function resolveVoice(referenceId) {
   const value = String(referenceId ?? '').trim();
@@ -116,9 +131,65 @@ async function synthesizeVolc({ text, voicePromptText, encoding = 'mp3', speed =
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1');
+  cors(res);
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    return res.end();
+  }
   if (req.method === 'GET' && url.pathname === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ ok: true, mode, hasApiKey: !!(config.apiKey ?? config.token ?? '') }));
+  }
+  if (req.method === 'GET' && url.pathname === '/api/config') {
+    const model = String(config.model ?? '').trim();
+    const list = Object.keys(models).length
+      ? Object.entries(models).map(([id, v]) => ({
+          id,
+          label: typeof v === 'string' ? v : (v?.label ?? id),
+          defaultVoicePrompt: typeof v === 'string' ? '' : (v?.defaultVoicePrompt ?? ''),
+        }))
+      : [{ id: model || 'seed-audio-1.0', label: model || 'seed-audio-1.0', defaultVoicePrompt: defaultVoicePrompt }];
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({
+      mode,
+      model,
+      models: list,
+      defaultVoicePrompt,
+      voicePrompt,
+      port,
+    }));
+  }
+  if (req.method === 'POST' && url.pathname === '/api/config') {
+    let raw = '';
+    for await (const chunk of req) raw += chunk;
+    let patch;
+    try { patch = JSON.parse(raw); }
+    catch { res.writeHead(400, { 'Content-Type': 'application/json' }); return res.end('{"error":"invalid json"}'); }
+    const next = {};
+    if (typeof patch.model === 'string' && patch.model.trim()) {
+      const model = patch.model.trim();
+      if (Object.keys(models).length && !Object.prototype.hasOwnProperty.call(models, model)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: '未知模型：' + model }));
+      }
+      next.model = model;
+      const entry = models[model];
+      if (entry && typeof entry === 'object' && typeof entry.defaultVoicePrompt === 'string' && entry.defaultVoicePrompt) {
+        next.defaultVoicePrompt = entry.defaultVoicePrompt;
+      }
+    }
+    if (typeof patch.defaultVoicePrompt === 'string') next.defaultVoicePrompt = patch.defaultVoicePrompt;
+    if (patch.voicePrompt && typeof patch.voicePrompt === 'object') {
+      const cleaned = {};
+      for (const [k, v] of Object.entries(patch.voicePrompt)) {
+        if (typeof v === 'string' && v.trim()) cleaned[String(k).trim()] = v.trim();
+      }
+      next.voicePrompt = cleaned;
+    }
+    try { saveConfig(next); }
+    catch (error) { res.writeHead(500, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ error: String(error.message ?? error) })); }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, model: config.model, defaultVoicePrompt: config.defaultVoicePrompt }));
   }
   if (req.method === 'POST' && /\/v1\/tts\/?$/.test(url.pathname)) {
     let raw = '';

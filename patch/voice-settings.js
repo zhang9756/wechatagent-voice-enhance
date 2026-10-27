@@ -49,6 +49,9 @@ export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) 
     }
     if (request !== sequence) return '';
     const list = rows();
+    let volc = { available: false, data: null };
+    try { volc = await api('/api/voice/volc'); } catch { volc = { available: false }; }
+    if (request !== sequence) return '';
     const route = data.route ?? {};
     const routeTag = route.supported
       ? '<span class="status-tag ok">原生语音条可用</span>'
@@ -61,7 +64,7 @@ export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) 
         <div class="card-header"><div class="section-label"><span class="section-icon">${icon('send')}</span><div><h2>换音色</h2><p class="card-description">选一个聊天，填入音色 ID，点“应用”即可，下一条语音立刻用新音色。</p></div></div></div>
         <div class="form-grid">
           <div class="field"><label for="voice-quick-chat">目标聊天</label><select id="voice-quick-chat">${list.map(key => `<option value="${esc(key)}">${esc(chatLabel(key))}</option>`).join('')}</select><small>只列出已允许的好友和群聊。</small></div>
-          <div class="field"><label for="voice-quick-id">音色 ID</label><input id="voice-quick-id" class="mono" type="text" maxlength="64" placeholder="32 位十六进制音色 ID，例如 00000000000000000000000000000000"><small>填 Fish Audio 的引用 ID；留空表示这个聊天跟随全局默认。</small></div>
+          <div class="field"><label for="voice-quick-id">音色 ID</label><input id="voice-quick-id" class="mono" type="text" maxlength="64" placeholder="32 位十六进制音色 ID，例如 b9e0f881bec94846ac9df43e10488fe0"><small>填 Fish Audio 的引用 ID；留空表示这个聊天跟随全局默认。</small></div>
         </div>
         <div class="button-row space-top">
           <button class="button primary" data-voice-quick-apply>${icon('check')}应用</button>
@@ -87,6 +90,13 @@ export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) 
         <div class="card-header"><div class="section-label"><span class="section-icon">${icon('sliders')}</span><div><h2>语音通道</h2><p class="card-description">当前引擎：${esc(engineLabel(data.defaults.engine))} · 全局默认音色：<span class="mono">${esc(data.defaults.voice || '未设置')}</span></p></div></div><div class="button-row">${routeTag}<button class="button small" data-voice-refresh>${icon('refresh')}刷新</button></div></div>
         ${data.route?.message ? `<p class="scope-note">${esc(data.route.message)}</p>` : `<p class="scope-note">聊天单独设置的音色优先于全局默认；留空或点“恢复默认”就会回到默认音色。音色 ID 为 Fish Audio 的 32 位十六进制引用 ID。</p>`}
       </section>
+      ${volc.available && volc.data?.models?.length ? `<section class="card">
+        <div class="card-header"><div class="section-label"><span class="section-icon">${icon('tool')}</span><div><h2>火山引擎模型</h2><p class="card-description">当前合成模型：<strong>${esc(volc.data.model || '未设置')}</strong> · 切换后对所有合成立即生效。</p></div></div></div>
+        <div class="form-grid">
+          <div class="field"><label for="voice-volc-model">合成模型</label><select id="voice-volc-model">${volc.data.models.map(m => `<option value="${esc(m.id)}" ${m.id === volc.data.model ? 'selected' : ''}>${esc(m.label || m.id)}</option>`).join('')}</select><small>模型定义在代理配置 volc-config.json 的 models 字段中；声音风格仍由“音色 ID → 声音描述”映射决定。</small></div>
+        </div>
+        <div class="button-row space-top"><button class="button primary" data-voice-volc-save>${icon('check')}保存模型</button></div>
+      </section>` : ''}
       <section class="card">
         <div class="card-header"><div class="section-label"><span class="section-icon">${icon('users')}</span><div><h2>按聊天设置音色</h2><p class="card-description">每行填入音色 ID 后保存，下一条语音立即生效，不需要重启服务。</p></div></div><div class="button-row"><button class="button primary" data-voice-save>保存全部</button></div></div>
         ${table}
@@ -281,6 +291,20 @@ export function createVoiceUI({api,state,escapeHtml:esc,icon,renderPage,toast}) 
       return true;
     }
     if (button.hasAttribute('data-voice-log-refresh')) { void renderPage(); return true; }
+    if (button.hasAttribute('data-voice-volc-save')) {
+      const model = document.getElementById('voice-volc-model')?.value ?? '';
+      if (!model) { toast('请选择模型'); return true; }
+      void (async () => {
+        toast('正在保存模型…');
+        try {
+          const result = await api('/api/voice/volc', { model });
+          if (!result?.available) { toast('火山代理不可用，请先启动 start-volc-proxy.bat'); return; }
+          toast('火山引擎模型已切换为 ' + model);
+          await renderPage();
+        } catch (error) { toast(error.message); }
+      })();
+      return true;
+    }
     if (button.hasAttribute('data-voice-send')) { void composeAndSend(); return true; }
     if (button.hasAttribute('data-voice-send-preview')) { void composeAndPreview(); return true; }
     if (button.dataset.voicePreview) { void preview(button.dataset.voicePreview); return true; }

@@ -121,6 +121,13 @@ export function createConsole({ root = projectRoot, port = 3210, runner, readerS
     return { engine: settings.engine ?? 'fish', voice: settings.voice ?? '', rate: Number(settings.rate ?? 0), volume: Number(settings.volume ?? 100) };
   };
   const voiceChats = () => optionalJson(voiceFiles().chats).chats ?? {};
+  // 若 fishEndpoint 指向本机代理（127.0.0.1），返回代理根地址，否则返回空。
+  const volcProxyBase = () => {
+    const settings = optionalJson(voiceFiles().config);
+    const endpoint = String(settings.fishEndpoint ?? '').trim();
+    const match = /^https?:\/\/127\.0\.0\.1(?::\d+)?/.exec(endpoint);
+    return match ? match[0] : '';
+  };
   const voiceCheck = value => {
     const text = String(value ?? '').trim();
     if (text && !/^[a-f0-9]{32}$/i.test(text)) throw fault('音色 ID 应为 32 位十六进制字符。');
@@ -461,6 +468,18 @@ export function createConsole({ root = projectRoot, port = 3210, runner, readerS
         } catch (error) { /* 保持默认提示 */ }
         return reply(200, { defaults: voiceDefaults(), chats: voiceChats(), route });
       }
+      // 火山引擎模型配置（本地代理中转）
+      if (req.method === 'GET' && route === '/api/voice/volc') {
+        const base = volcProxyBase();
+        if (!base) return reply(200, { available: false });
+        try {
+          const r = await fetch(base + '/api/config', { signal: AbortSignal.timeout(6000) });
+          const data = await r.json();
+          return reply(200, { available: true, data });
+        } catch (error) {
+          return reply(200, { available: false, error: String(error?.message ?? error).slice(0, 200) });
+        }
+      }
       if(req.method==='GET'&&route==='/api/sticker-pool')return reply(200,await reader('/api/v1/stickers/pool-status'));
       if(req.method==='GET'&&route==='/api/sticker-manager')return reply(200,await stickerManager(''));
       if(req.method==='GET'&&route==='/api/sticker-manager/image'){
@@ -731,6 +750,22 @@ export function createConsole({ root = projectRoot, port = 3210, runner, readerS
           });
         }
         return reply(200, { ok: true, url: '/voice-preview/' + name, engine: failed ? 'edge' : useEngine, voice, text, fallbackFrom: failed ? useEngine : '', fallbackReason: failed });
+      }
+      if (route === '/api/voice/volc') {
+        const base = volcProxyBase();
+        if (!base) return reply(200, { available: false });
+        try {
+          const r = await fetch(base + '/api/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: String(body?.model ?? '').trim() }),
+            signal: AbortSignal.timeout(6000),
+          });
+          const data = await r.json();
+          return reply(200, { available: true, data });
+        } catch (error) {
+          return reply(200, { available: false, error: String(error?.message ?? error).slice(0, 200) });
+        }
       }
       if (route === '/api/voice/chat') {
         const files = voiceFiles();

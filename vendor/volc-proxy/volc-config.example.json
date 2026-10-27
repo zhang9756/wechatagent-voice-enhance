@@ -2,6 +2,16 @@
   "mode": "v3",
   "apiKey": "替换为火山引擎X-Api-Key",
   "model": "seed-audio-1.0",
+  "models": {
+    "seed-audio-1.0": {
+      "label": "Seed Audio 1.0（全能语音生成，支持声音描述）",
+      "defaultVoicePrompt": "一个年轻女性的声音，说话自然、温柔、清晰。"
+    },
+    "seed-tts-1.0": {
+      "label": "Seed TTS 1.0（标准语音合成，低延迟）",
+      "defaultVoicePrompt": "一个年轻女性的声音，说话自然、温柔、清晰。"
+    }
+  },
   "port": 8787,
   "endpoint": "https://openspeech.bytedance.com/api/v3/tts/create",
   "defaultVoicePrompt": "一个年轻女性的声音，说话自然、温柔、清晰。",
